@@ -1,0 +1,72 @@
+name: Building and pushing docker images to AWS ECR
+on:
+  push:
+    branches:
+      - master
+      - docker-img-ecr
+  pull_request:
+    branches: [ master ]
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_DEFAULT_OUTPUT: json
+  AWS_ACCOUNT_ID: ${{ secrets.DUMMY_ACCOUNT }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.DUMMY_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.DUMMY_VALUE }}
+
+jobs:
+
+  build-push-gateway:
+    runs-on: ubuntu-latest
+
+    env:
+      GATEWAY_IMAGE: dask-gateway-image
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up ECR
+        run: |
+          $( aws ecr get-login --no-include-email )
+
+      - name: Build dask-gateway image
+        run: |
+          cd dask-gateway
+          docker build . -t $GATEWAY_IMAGE
+
+      - name: Tag dask-gateway image
+        run: |
+          docker tag $GATEWAY_IMAGE:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/amp/enzo/$GATEWAY_IMAGE
+
+      - name: Push dask-gateway image
+        # if: github.ref == 'refs/heads/master'
+        run: |
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/amp/enzo/$GATEWAY_IMAGE
+
+
+  build-push-gateway-server:
+    runs-on: ubuntu-latest
+
+    env:
+      GATEWAY_SERVER_IMAGE: dask-gateway-server-image
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up ECR
+        run: |
+          $( aws ecr get-login --no-include-email )
+
+      - name: Build dask-gateway-server image
+        run: |
+          cd dask-gateway-server
+          docker build . -t $GATEWAY_SERVER_IMAGE
+
+      - name: Tag dask-gateway-server image
+        run: |
+          docker tag $GATEWAY_SERVER_IMAGE:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/amp/enzo/$GATEWAY_SERVER_IMAGE
+
+      - name: Push dask-gateway-server image
+        # if: github.ref == 'refs/heads/master'
+        run: |
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/amp/enzo/$GATEWAY_SERVER_IMAGE
