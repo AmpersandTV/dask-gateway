@@ -27,7 +27,7 @@ jobs:
 
       - name: Set up ECR
         run: |
-          $( aws ecr get-login --no-include-email )
+          $( aws ecr get-login --region us-east-1)
 
       - name: Build dask-gateway image
         run: |
